@@ -25,6 +25,25 @@ router.post('/',async (req,res)=>{
     res.status(200).json({category})
 })
 
+router.get('/:id',async(req,res)=>{
+    const category = await Category.findById({_id:req.params.id})
+    if(!category){
+        res.status(500).json({message:'The category with given Id was not found'})
+    }
+    res.status(200).json({category})
+})
+
+router.patch('/:id',async(req,res)=>{
+    const category = await Category.findByIdAndUpdate({_id:req.params.id},{
+        name:req.body.name,
+        icon:req.body.icon,
+        color:req.body.color
+    },{new:true,runValidators:true})
+    if(!category){
+        res.status(400).json({message:'The category not be createc'})
+    }
+})
+
 router.delete('/:id',(req,res)=>{
  Category.findByIdAndDelete({_id:req.params.id}).then(category =>{
     if(category){
