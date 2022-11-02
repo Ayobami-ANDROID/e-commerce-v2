@@ -4,7 +4,7 @@ const router = express.Router()
 const Category = require('../models/category')
 
 router.get('/', async(req,res)=>{
-    const categoryList = await Categories.find()
+    const categoryList = await Category.find()
 
     if(!categoryList){
         res.status(500).json({success:false})
@@ -33,7 +33,7 @@ router.get('/:id',async(req,res)=>{
     res.status(200).json({category})
 })
 
-router.patch('/:id',async(req,res)=>{
+router.put('/:id',async(req,res)=>{
     const category = await Category.findByIdAndUpdate({_id:req.params.id},{
         name:req.body.name,
         icon:req.body.icon,
@@ -42,6 +42,7 @@ router.patch('/:id',async(req,res)=>{
     if(!category){
         res.status(400).json({message:'The category not be createc'})
     }
+    res.status(200).json({category})
 })
 
 router.delete('/:id',(req,res)=>{
