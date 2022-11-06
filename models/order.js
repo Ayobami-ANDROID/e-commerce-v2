@@ -41,6 +41,9 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref:'user'
     },
+    paymentIntentId: {
+        type: String,
+    },
     dateOrdered:{
         type:Date,
         default:Date.now()
