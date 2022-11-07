@@ -13,12 +13,17 @@ const FILE_TYPE_MAP = {
 }
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'public/uploads')
+      const isValid = FILE_TYPE_MAP[file.mimetype]
+      let uploadError = new Error('Invalid image type')
+      if(isValid){
+        uploadError= null
+      }
+      cb(uploadError, 'public/uploads')
     },
     filename: function (req, file, cb) {
       const fileName = file.originalname.split(' ').join('-')
       const extension = FILE_TYPE_MAP[file.mimetype]
-      cb(null, `${fileName}-${Date.now}.${extension}`)
+      cb(null, `${fileName}-${Date.now()}.${extension}`)
     }
   })
   
@@ -40,6 +45,8 @@ router.get('/', async(req,res)=>{
 router.post('/',upload.single('image'),async(req,res)=>{
     const category = await Category.findById(req.body.category)
     if(!category) return res.status(500).send('Invalid Category')
+    const file = req.file
+    if(!file) return res.status(400).send("No image in the request")
     const fileName = req.file.filename
     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`
     let Product = new product({
@@ -128,6 +135,29 @@ router.delete('/:id',(req,res)=>{
         res.status(500).json({success:false})
     }
     res.send({products})
+   })
+
+   router.put('/gallery-images/:id',upload.array('images',10),async(req,res)=>{
+    if(!mongoose.isValidObjectId(req.params.id)){
+        res.status(500).send('Invalid Product Id')
+    }
+
+    const files = req.files
+    let imagePaths = []
+    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`
+    if(files){
+        files.map(file =>{
+            imagePaths.push(`${basePath}${file.filename}`)
+        })
+    }
+
+    const Product = await product.findByIdAndUpdate({_id:req.params.id},{
+        images:imagePaths
+    },{new:true,runValidators:true})
+    if(!Product){
+        return res.status(500).send('The product cannot be created')
+    }
+    res.status(201).json({Product})
    })
 
 module.exports = router
