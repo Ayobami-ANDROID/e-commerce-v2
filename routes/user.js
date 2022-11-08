@@ -86,8 +86,9 @@ router.post('/verifyOtp/:id',async (req,res)=>{
     if(!req.body.otp || req.body.otp !== user.otp){
         res.status(400).send('wrong otp code')
     }
-    const token = jwt.sign({userId:user.id,
+    const token = await jwt.sign({userId:user.id,
         isAdmin:user.isAdmin},process.env.Jwt_Secret,{expiresIn:'3h'})
+    
     res.json({token:token,user:user.email})
 })
 
