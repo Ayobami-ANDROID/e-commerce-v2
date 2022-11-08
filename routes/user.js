@@ -4,6 +4,9 @@ const User = require('../models/user')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const user = require('../models/user')
+
+const {generateOTP} = require('../otp/generateotp')
+const nodemailer = require('nodemailer')
 require('dotenv').config()
 
 router.get('/', async(req,res)=>{
@@ -25,6 +28,32 @@ router.get('/:id', async(req,res)=>{
 })
 
 router.post('/register',async (req,res)=>{
+    const Otp = generateOTP(6)
+
+    let transporter = nodemailer.createTransport({
+        service:'gmail',
+        auth:{
+            user:process.env.EMAIL_USERNAME,
+            pass:process.env.EMAIL_PASSWORD
+        }
+    })
+
+    let mailOptions = {
+        from:process.env.EMAIL_USERNAME,
+        to:req.body.email,
+        subject:'Testing and testing',
+        html:Otp
+    }
+
+    transporter.sendMail(mailOptions,(error,data)=>{
+        if(error){
+            console.log(error)
+        }
+        else{
+            console.log(data)
+        }
+    })
+  
     let user = new User({
         name:req.body.name,
         email:req.body.email,
@@ -35,8 +64,13 @@ router.post('/register',async (req,res)=>{
         apartment:req.body.apartment,
         zip:req.body.zip,
         city:req.body.city,
-        country:req.body.country
+        country:req.body.country,
+        otp:Otp,
     })
+
+    // if(req.body.otp !== Otp || ! req.body.otp){
+    //     return res.status(400).send('wrong otp code')
+    // }
    user  = await user.save()
     if(!user){
         return res.status(404).send('the user cannot be created!')
@@ -44,8 +78,22 @@ router.post('/register',async (req,res)=>{
     res.status(200).json({user})
 })
 
+router.post('/verifyOtp/:id',async (req,res)=>{
+    const user = await User.findById({_id:req.params.id})
+    if(!user){
+        res.status(400).send('no user found')
+    }
+    if(!req.body.otp || req.body.otp !== user.otp){
+        res.status(400).send('wrong otp code')
+    }
+    const token = jwt.sign({userId:user.id,
+        isAdmin:user.isAdmin},process.env.Jwt_Secret,{expiresIn:'3h'})
+    res.json({token:token,user:user.email})
+})
+
 router.post('/login',async (req,res)=>{
     const user = await User.findOne({email:req.body.email})
+   
 
     if(!user){
         return res.status(400).json({msg:"user not found"})
