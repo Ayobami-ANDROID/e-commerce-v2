@@ -104,7 +104,7 @@ router.post('/login',async (req,res)=>{
         const token = jwt.sign({
             userId:user.id,
             isAdmin:user.isAdmin
-        },process.env.Jwt_Secret)
+        },process.env.Jwt_Secret,{expiresIn:'3h'})
         res.status(200).json({user:user.email,token:token})
     }
     else{
